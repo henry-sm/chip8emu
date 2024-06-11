@@ -1,9 +1,62 @@
 
-struct Chip8 {
-    m_Memory : [u8; 0xfff], // 4096 bytes of 8bit memory
-    m_Registers : [u8; 16], //16 registers, each 1 byte
-    m_AddressI : u16
+const FONT: [[u8; 5]; 16] = [
+    [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0, 1 all the way to F
+    [0x20, 0x60, 0x20, 0x20, 0x70],
+    [0xf0, 0x10, 0xf0, 0x80, 0xf0],
+    [0xf0, 0x10, 0xf0, 0x10, 0xf0],
+    [0x90, 0x90, 0xf0, 0x10, 0x10],
+    [0xf0, 0x80, 0xf0, 0x10, 0xf0],
+    [0xf0, 0x80, 0xf0, 0x90, 0xf0],
+    [0xf0, 0x10, 0x20, 0x40, 0x40],
+    [0xf0, 0x90, 0xf0, 0x90, 0xf0],
+    [0xf0, 0x90, 0xf0, 0x10, 0xf0],
+    [0xf0, 0x90, 0xf0, 0x90, 0x90],
+    [0xe0, 0x90, 0xe0, 0x90, 0xe0],
+    [0xf0, 0x80, 0x80, 0x80, 0xf0], 
+    [0xe0, 0x90, 0x90, 0x90, 0xe0],
+    [0xf0, 0x80, 0xf0, 0x80, 0xf0], 
+    [0xf0, 0x80, 0xf0, 0x80, 0x80], 
+];
 
-    
+struct Chip8 {
+    register : [u8; 16], //16 general purpose registers
+    i : u16, //store mem adress
+    dt : u8, //delay itmer
+    st : u8, //sound timer
+    pc : u16, //program counter
+    sp : u8, //stack pointer
+    stk : Vec<u16>, // stack
+    memory : [u8; 0xfff], // 4k RAM
+    display : [[u8;64];32], // 64x32 display
+    keypad : [bool; 16], // keypad input
 }
+
+
+impl Chip8{
+    
+
+
+
+    fn CPU_reset(&mut self){
+        self.pc = 0x200;
+        //memset (register, 0, std::mem::size_of_val(&register)); //registers are 0 //where did memset go?
+    }
+
+    fn opcode(&self){
+        //take opcode from memory and read 2 bytes from it
+        let opcode = ((self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16));
+        let nnn = opcode & 0xfff;
+        let kk = opcode & 0xff;
+        let n = opcode & 0xf;
+        let x = (nnn>>8) & 0xf;
+        let y = (kk>>4) & 0xf;
+    }
+
+}
+
+impl Chip8{ //separate impl for opcodes 
+
+}
+
+
     
