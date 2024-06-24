@@ -1,3 +1,4 @@
+use rand::Rng;
 
 const FONT: [[u8; 5]; 16] = [
     [0xf0, 0x90, 0x90, 0x90, 0xf0], // 0, 1 all the way to F
@@ -24,7 +25,7 @@ struct Chip8 {
     dt : u8, //delay itmer
     st : u8, //sound timer
     pc : u16, //program counter
-    sp : u8, //stack pointer
+   // sp : u8, //stack pointer
     stk : Vec<u16>, // stack
     memory : [u8; 0xfff], // 4k RAM
     display : [[u8;64];32], // 64x32 display
@@ -42,20 +43,253 @@ impl Chip8{
         //memset (register, 0, std::mem::size_of_val(&register)); //registers are 0 //where did memset go?
     }
 
-    fn opcode(&self){
+    fn opcode(&mut self){
         //take opcode from memory and read 2 bytes from it
-        let opcode = ((self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16));
-        let nnn = opcode & 0xfff;
-        let kk = opcode & 0xff;
-        let n = opcode & 0xf;
-        let x = (nnn>>8) & 0xf;
-        let y = (kk>>4) & 0xf;
+        let opcode: u16 = ((self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16));
+        let nnn: u16 = opcode & 0xfff;
+        let kk = (opcode & 0xff) as u8;
+        let n = (opcode & 0xf) as u8 ;
+        let x = ((nnn>>8) & 0xf) as usize;
+        let y = ((kk>>4) & 0xf) as usize;
+
+        match &opcode & 0xf000 {
+            0x0000 => match opcode {
+                0x00e0 => self._00e0(),
+                0x00ee => self._00ee(),
+                _ => println!("Invalid opcode/ no opcode found"),
+            }
+
+            0x0001 => self._1nnn(nnn),
+            0x0002 => self._2nnn(nnn),
+            0x0003 => self._3xkk(x, kk),
+            0x0004 => self._4xkk(x, kk),
+            0x0005 => self._5xy0(x, y),
+            0x0006 => self._6xkk(x, kk),
+            0x0007 => self._7xkk(x, kk),
+
+            0x0008 => match n{
+                0x0000 => self._8xy0(x, y),
+                0x0001 => self._8xy1(x, y),
+                0x0002 => self._8xy2(x, y),
+                0x0003 => self._8xy3(x, y),
+                0x0004 => self._8xy4(x, y),
+                0x0005 => self._8xy5(x, y),
+                0x0006 => self._8xy6(x, y),
+                0x0007 => self._8xy7(x, y),
+                0x000e => self._8xye(x, y),
+                _ => println!("Invalid opcode/ no opcode found"),
+            }
+
+            0x0009 => self._9xy0(x, y),
+            0x000a => self._annn(nnn),
+            0x000b => self._bnnn(nnn),
+            0x000c => self._cxkk(x, kk),
+            0x000d => self._dxyn(x, y, n),
+
+            0x000e => match kk{
+                0x009e => self._ex9e(x),
+                0x00a1 => self._exa1(x),
+                _ => println!("Invalid opcode/ no opcode found"),
+            }
+
+            0x000f => match kk{
+                0x0007 => self._fx07(x),
+                0x000a => self._fx0a(x),
+                0x0015 => self._fx15(x),
+                0x0018 => self._fx18(x),
+                0x001e => self._fx1e(x),
+                0x0029 => self._fx29(x),
+                0x0033 => self._fx33(x),
+                0x0055 => self._fx55(x),
+                0x0065 => self._fx65(x),
+                _ => println!("Invalid opcode/ no opcode found"),
+            }
+            
+            _ => println!("Invalid opcode/ no opcode found"),
+        }
     }
 
 }
 
 impl Chip8{ //separate impl for opcodes 
 
+    fn _00e0(&mut self){
+        self.display.fill([0;64]);
+    }
+
+    fn _00ee(&mut self){
+        self.pc = self.stk.pop().unwrap();
+    }
+
+    fn _1nnn(&mut self, nnn : u16){
+        self.pc = nnn;
+    }
+
+    fn _2nnn(&mut self, nnn : u16){
+        self.stk.push(self.pc);
+        self.pc = nnn;
+    }
+
+    fn _3xkk(&mut self, x : usize, kk:u8){
+        if self.register[x] == kk{
+            self.pc += 2;
+        }
+    }
+
+    fn _4xkk(&mut self, x:usize, kk:u8){
+        if self.register[x] != kk{
+            self.pc += 2;
+        }
+    }
+
+    fn _5xy0(&mut self, x:usize, y:usize){
+        if self.register[x] == self.register[y]{
+            self.pc += 2;
+        }
+    }
+
+    fn _6xkk(&mut self, x:usize, kk:u8){
+        self.register[x] = kk;
+    }
+
+    fn _7xkk(&mut self, x:usize, kk:u8){
+        self.register[x] += kk;
+    }
+
+    fn _8xy0(&mut self, x:usize, y:usize){
+        self.register[x] = self.register[y];
+    }
+
+    fn _8xy1(&mut self, x:usize, y:usize){
+        self.register[x] |= self.register[y];
+    }
+
+    fn _8xy2(&mut self, x:usize, y:usize){
+        self.register[x] &= self.register[y];
+    }
+
+    fn _8xy3(&mut self, x:usize, y:usize){
+        self.register[x] ^= self.register[y];
+    }
+
+    fn _8xy4(&mut self, x:usize, y:usize){
+        if self.register[x] + self.register[y] > 0xff{
+            self.register[0xf] = 1;
+        }
+        else{self.register[0xf] = 0;}
+        self.register[x] = (self.register[x] + self.register[y]) & 0xff;
+    }
+
+    fn _8xy5(&mut self, x:usize, y:usize){
+        self.register[0xf] = if self.register[x] > self.register[y]{1} else {0};
+        self.register[x] -= self.register[y];
+    }
+
+    fn _8xy6(&mut self, x:usize, y:usize){
+        self.register[0xf] = if self.register[x] & 0x1 == 1{1} else {0};
+        self.register[x] >>= 1; //divided by 2
+    }
+
+    fn _8xy7(&mut self, x:usize, y:usize){
+        self.register[0xf] = if self.register[y] > self.register[x]{1} else {0};
+        self.register[x] = self.register[y] - self.register[x];
+    }
+
+    fn _8xye(&mut self, x:usize, y:usize){
+        self.register[0xf] = if self.register[x] & 0x80 == 0x80{1} else {0};
+        self.register[x] <<= 1; //multiply by 2
+    }
+
+    fn _9xy0(&mut self, x:usize, y:usize){
+        self.pc+= if self.register[x] != self.register[y]{2} else {0};
+    }
+
+    fn _annn(&mut self, nnn:u16){
+        self.i = nnn;
+    }
+
+    fn _bnnn(&mut self, nnn:u16){
+        self.pc = (nnn + (self.register[0] as u16)) as u16;
+    }
+
+    fn _cxkk(&mut self, x:usize, kk:u8){
+        self.register[x] = rand::thread_rng().gen_range(0..255) & kk;
+    }
+
+    //not confident on this opcode
+    fn _dxyn(&mut self, x:usize, y:usize, n:u8){
+        let mut pixel;
+        self.register[0xf] = 0;
+        for vy in 0..n{
+            for vx in 0..8{
+                pixel = self.memory[self.i as usize + vy as usize];
+                if (pixel & (0x80 >> vx) != 0) && self.display[(self.register[x] as usize + vx) % 64][(self.register[y] as usize + (vy as usize)) % 32] == 1{
+                    //the is to see if the pixel is out of the screen so that it wraps around
+                   // self.register[0xf] = 1; 
+                    self.display[(self.register[x] as usize + vx) % 64][(self.register[y] as usize + (vy as usize)) % 32] ^= 1;
+                    
+                }
+                if pixel^1 == 0{
+                    self.register[0xf] = 1;
+                }
+            }
+        }
+    }
+
+    fn _ex9e(&mut self, x:usize){
+        self.pc += if self.keypad[self.register[x] as usize]{2} else {0};
+    }
+
+    fn _exa1(&mut self, x:usize){
+        self.pc += if !self.keypad[self.register[x] as usize]{2} else {0};
+    }
+
+    fn _fx07(&mut self, x:usize){
+        self.register[x] = self.dt;
+    }
+
+    fn _fx0a(&mut self, x:usize){
+        for i in 0..16{
+            if self.keypad[i]{
+                self.register[x] = i as u8;
+            }
+        }
+    }
+
+    fn _fx15(&mut self, x:usize){
+        self.dt = self.register[x];
+    }
+
+    fn _fx18(&mut self, x:usize){
+        self.st = self.register[x];
+    }
+
+    fn _fx1e(&mut self, x:usize){
+        self.i += self.register[x] as u16;
+    }
+
+    fn _fx29(&mut self, x:usize){
+        self.i = (self.register[x] as u16) * 5; //sprites are 5 bytes
+    }
+
+    fn _fx33(&mut self, x:usize){
+        self.memory[self.i as usize] = self.register[x] / 100;
+        self.memory[(self.i + 1) as usize] = (self.register[x] / 10) % 10;
+        self.memory[(self.i + 2) as usize] = self.register[x] % 10;
+    }
+
+    fn _fx55(&mut self, x:usize){
+        for q in 0..x{
+            self.memory[self.i as usize + q] = self.register[q];
+        }
+    }
+
+    fn _fx65(&mut self, x:usize){
+        for q in 0..x{
+            self.register[q] = self.memory[self.i as usize + q];
+        }
+    }
+    
 }
 
 
