@@ -1,7 +1,6 @@
 use chip8emu::chip8;
 use std::fs::File;
 use std::env;
-use std::io::Read;
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -11,13 +10,14 @@ fn main() -> std::io::Result<()> {
     }
 
     let ch8filename = &args[1];
-    let mut ch8file = File::open(ch8filename)?; // Handle the Result using `?`
+    let ch8file = File::open(ch8filename)?; // Handle the Result using `?`
 
     let mut CHIP8 = chip8::Chip8::new(ch8file);
     CHIP8.CPU_reset();
-    CHIP8.opcode();
+    CHIP8.read_file();
+    CHIP8.clock_cycle();
+
     println!("Hello, world!");
     Ok(())
 }
-
 

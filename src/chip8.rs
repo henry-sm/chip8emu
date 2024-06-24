@@ -1,4 +1,7 @@
+use std::io::Read;
 use rand::Rng;
+use std::time::{Duration, SystemTime};
+
 
 
 const FONT: [[u8; 5]; 16] = [
@@ -39,7 +42,7 @@ impl Chip8{
     
     pub fn new(chfile :std::fs::File ) -> Chip8{
         let mut memory = [0; 0xfff];
-        memory[..80].copy_from_slice(&FONT[0]);
+        memory[..5].copy_from_slice(&FONT[0]); // the 5 could be 80
         Chip8{
             register : [0; 16],
             i : 0,
@@ -60,6 +63,11 @@ impl Chip8{
         //memset (register, 0, std::mem::size_of_val(&register)); //registers are 0 //where did memset go?
     }
 
+    pub fn read_file(&mut self){
+        let mut buffer: [u8; 3583] = [0; 3583]; //the fist 512 bytes are reserved for the interpreter
+        self.file.read(&mut buffer).unwrap();
+        self.memory[0x200..].copy_from_slice(&buffer);
+    }
     pub fn opcode(&mut self){
         //take opcode from memory and read 2 bytes from it
         let opcode: u16 = ((self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16));
@@ -73,18 +81,18 @@ impl Chip8{
             0x0000 => match opcode {
                 0x00e0 => self._00e0(),
                 0x00ee => self._00ee(),
-                _ => println!("Invalid opcode/ no opcode found"),
+                _ => self.pc += 2, //
             }
 
-            0x0001 => self._1nnn(nnn),
-            0x0002 => self._2nnn(nnn),
-            0x0003 => self._3xkk(x, kk),
-            0x0004 => self._4xkk(x, kk),
-            0x0005 => self._5xy0(x, y),
-            0x0006 => self._6xkk(x, kk),
-            0x0007 => self._7xkk(x, kk),
+            0x1000 => self._1nnn(nnn),
+            0x2000 => self._2nnn(nnn),
+            0x3000 => self._3xkk(x, kk),
+            0x4000 => self._4xkk(x, kk),
+            0x5000 => self._5xy0(x, y),
+            0x6000 => self._6xkk(x, kk),
+            0x7000 => self._7xkk(x, kk),
 
-            0x0008 => match n{
+            0x8000 => match n{
                 0x0000 => self._8xy0(x, y),
                 0x0001 => self._8xy1(x, y),
                 0x0002 => self._8xy2(x, y),
@@ -94,22 +102,22 @@ impl Chip8{
                 0x0006 => self._8xy6(x, y),
                 0x0007 => self._8xy7(x, y),
                 0x000e => self._8xye(x, y),
-                _ => println!("Invalid opcode/ no opcode found"),
+                _ => self.pc += 2, //test
             }
 
-            0x0009 => self._9xy0(x, y),
-            0x000a => self._annn(nnn),
-            0x000b => self._bnnn(nnn),
-            0x000c => self._cxkk(x, kk),
-            0x000d => self._dxyn(x, y, n),
+            0x9000 => self._9xy0(x, y),
+            0xa000 => self._annn(nnn),
+            0xb000 => self._bnnn(nnn),
+            0xc000 => self._cxkk(x, kk),
+            0xd000 => self._dxyn(x, y, n),
 
-            0x000e => match kk{
+            0xe000 => match kk{
                 0x009e => self._ex9e(x),
                 0x00a1 => self._exa1(x),
-                _ => println!("Invalid opcode/ no opcode found"),
+                _ => println!("Invalid opcode {:X}", opcode),
             }
 
-            0x000f => match kk{
+            0xf000 => match kk{
                 0x0007 => self._fx07(x),
                 0x000a => self._fx0a(x),
                 0x0015 => self._fx15(x),
@@ -119,26 +127,33 @@ impl Chip8{
                 0x0033 => self._fx33(x),
                 0x0055 => self._fx55(x),
                 0x0065 => self._fx65(x),
-                _ => println!("Invalid opcode/ no opcode found"),
+                _ => println!("Invalid opcode {:X}", opcode),
             }
             
-            _ => println!("Invalid opcode/ no opcode found"),
+            _ => println!("Invalid opcode {:X}", opcode),
         }
     }
 
     pub fn clock_cycle(&mut self){
-        self.opcode(); //fetch opcode
-        self.pc += 2; //increment program counter by 2 bytes
-        if self.dt > 0{ 
-            self.dt -= 1;
-        }
-        if self.st > 0{
-            self.st -= 1;
-        }
-        //decrement the timers
+        let cycle_duration = Duration::from_millis(1000/60);
+       // let next_cycle = SystemTime::now() + cycle_duration;
 
-
-    
+        loop {
+            let curtime = std::time::SystemTime::now();
+            self.opcode(); //fetch opcode)
+            self.pc += 2; //increment program counter by 2 bytes
+            if self.dt > 0{ 
+                self.dt -= 1;
+            }
+            if self.st > 0{
+                self.st -= 1;
+            }
+            // decrement the timers
+            
+            
+        
+        }
+            
     }
 
 }
@@ -185,7 +200,7 @@ impl Chip8{ //separate impl for opcodes
     }
 
     pub fn _7xkk(&mut self, x:usize, kk:u8){
-        self.register[x] += kk;
+        self.register[x] = self.register[x].wrapping_add(kk);
     }
 
     pub fn _8xy0(&mut self, x:usize, y:usize){
