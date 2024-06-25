@@ -1,7 +1,9 @@
 use chip8emu::chip8;
-use std::fs::File;
+use std::{fs::File, time::Duration};
 use std::env;
 use minifb::{Key, Window, WindowOptions};
+
+
 
 fn main() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -24,18 +26,39 @@ fn main() -> std::io::Result<()> {
 
     CHIP8.CPU_reset();
     CHIP8.read_file();
+    let cycle = Duration::from_millis(1000/60);
+    let mut last_cycle = std::time::Instant::now();
+
+    let key_map: std::collections::HashMap<Key, u8> = [
+    (Key::Key1, 0x1), (Key::Key2, 0x2), (Key::Key3, 0x3), (Key::Key4, 0xC),
+    (Key::Q, 0x4), (Key::W, 0x5), (Key::E, 0x6), (Key::R, 0xD),
+    (Key::A, 0x7), (Key::S, 0x8), (Key::D, 0x9), (Key::F, 0xE),
+    (Key::Z, 0xA), (Key::X, 0x0), (Key::C, 0xB), (Key::V, 0xF),].iter().cloned().collect();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        CHIP8.clock_cycle();
+        
+        let now = std::time::Instant::now();
+        if now.duration_since(last_cycle) >= cycle {
+            CHIP8.clock_cycle();
+            
+            let buffer = CHIP8.get_buffer();
+        
 
-        let buffer = [ 1, 1, 1];
+        window.update_with_buffer(&buffer, 64, 32).unwrap();
+        CHIP8.keypad = [false; 16];
 
-        window.update_with_buffer(&buffer, 640, 320).unwrap();
-
+        if let Some(keys) = window.get_keys_pressed(minifb::KeyRepeat::No) {
+            for key in keys {
+                if let Some(&chip8_key) = key_map.get(&key) {
+                    CHIP8.keypad[chip8_key as usize] = true;
+                }
+            }
+        }
+         last_cycle = now;
+        }
     }
 
-
-    println!("Hello, world!");
+    println!("GAME OVER!");
     Ok(())
 }
 

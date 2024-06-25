@@ -1,6 +1,6 @@
 use std::io::Read;
 use rand::Rng;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 
 
@@ -33,7 +33,7 @@ pub struct Chip8 {
     stk : Vec<u16>, // stack
     memory : [u8; 0xfff], // 4k RAM
     display : [[u8;64];32], // 64x32 display
-    keypad : [bool; 16], // keypad input
+    pub keypad : [bool; 16], // keypad input
     file : std::fs::File,
 }
 
@@ -135,11 +135,6 @@ impl Chip8{
     }
 
     pub fn clock_cycle(&mut self){
-        let cycle_duration = Duration::from_millis(1000/60);
-       // let next_cycle = SystemTime::now() + cycle_duration;
-
-        loop {
-            let curtime = std::time::SystemTime::now();
             self.opcode(); //fetch opcode)
             self.pc += 2; //increment program counter by 2 bytes
             if self.dt > 0{ 
@@ -149,12 +144,17 @@ impl Chip8{
                 self.st -= 1;
             }
             // decrement the timers
-            
-            
-        
-        }
-            
     }
+
+    pub fn get_buffer(&self) -> Vec<u32> {
+        let mut buffer = vec![0; 64 * 32];
+        for y in 0..32 {
+            for x in 0..64 {
+                buffer[y * 64 + x] = if self.display[y][x] == 1 { 0xffffff } else { 0 };
+            }
+        }
+        buffer
+    }   
 
 
 
