@@ -9,6 +9,7 @@ lib = true
 
 [dependencies]
 rand = "0.8"
+minifb = "0.19"
 
 [workspace]
 

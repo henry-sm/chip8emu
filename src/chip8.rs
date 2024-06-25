@@ -264,25 +264,29 @@ impl Chip8{ //separate impl for opcodes
     }
 
     //not confident on this opcode
-    pub fn _dxyn(&mut self, x:usize, y:usize, n:u8){
-        let mut pixel;
-        self.register[0xf] = 0;
-        for vy in 0..n{
-            for vx in 0..8{
-                pixel = self.memory[self.i as usize + vy as usize];
-                if (pixel & (0x80 >> vx) != 0) && self.display[(self.register[x] as usize + vx) & 63][(self.register[y] as usize + (vy as usize)) & 31] == 1{
-                    //instead of %64 try & 63 and the like 
-                    //the is to see if the pixel is out of the screen so that it wraps around
-                   // self.register[0xf] = 1; 
-                    self.display[(self.register[x] as usize + vx) & 31 ][(self.register[y] as usize + (vy as usize)) & 31] ^= 1;
-                    
-                }
-                if pixel^1 == 0{
+    pub fn _dxyn(&mut self, x:usize, y:usize, n:u8){ 
+    let xcord = x as usize % 64;
+    let ycord = y as usize % 32;
+
+    self.register[0xf] = 0;
+
+    for nrows in 0..n {
+        let sprite = self.memory[(self.i + nrows as u16) as usize];
+        for _8cols in 0..8 {
+            if (sprite & (0x80 >> _8cols)) != 0 {
+                let px = xcord + _8cols %64;
+                let py = ycord + (nrows as usize) % 32;
+                
+                if self.display[py][px] == 1 {
                     self.register[0xf] = 1;
                 }
+                self.display[py][px] = if self.display[py][px] == 1 {0} else {1};
             }
         }
     }
+        //none of ways i coded this works so currently copied straight off off gpt
+    }
+
 
     pub fn _ex9e(&mut self, x:usize){
         self.pc += if self.keypad[self.register[x] as usize]{2} else {0};
