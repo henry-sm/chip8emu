@@ -15,7 +15,7 @@ fn main() -> std::io::Result<()> {
 
     let mut CHIP8 = chip8::Chip8::new(ch8file);
     
-    let mut window = Window::new("Test - ESC to exit",
+    let mut window = Window::new("chip8emu",
                                  640,
                                  320,
                                  WindowOptions::default()).unwrap_or_else(|e| {
