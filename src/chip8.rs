@@ -270,10 +270,11 @@ impl Chip8{ //separate impl for opcodes
         for vy in 0..n{
             for vx in 0..8{
                 pixel = self.memory[self.i as usize + vy as usize];
-                if (pixel & (0x80 >> vx) != 0) && self.display[(self.register[x] as usize + vx) % 64][(self.register[y] as usize + (vy as usize)) % 32] == 1{
+                if (pixel & (0x80 >> vx) != 0) && self.display[(self.register[x] as usize + vx) & 63][(self.register[y] as usize + (vy as usize)) & 31] == 1{
+                    //instead of %64 try & 63 and the like 
                     //the is to see if the pixel is out of the screen so that it wraps around
                    // self.register[0xf] = 1; 
-                    self.display[(self.register[x] as usize + vx) % 64][(self.register[y] as usize + (vy as usize)) % 32] ^= 1;
+                    self.display[(self.register[x] as usize + vx) & 31 ][(self.register[y] as usize + (vy as usize)) & 31] ^= 1;
                     
                 }
                 if pixel^1 == 0{
