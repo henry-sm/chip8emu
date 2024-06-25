@@ -27,6 +27,11 @@ fn main() -> std::io::Result<()> {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         CHIP8.clock_cycle();
+
+        let buffer = [ 1, 1, 1];
+
+        window.update_with_buffer(&buffer, 640, 320).unwrap();
+
     }
 
 

@@ -156,6 +156,8 @@ impl Chip8{
             
     }
 
+
+
 }
 
 impl Chip8{ //separate impl for opcodes 
