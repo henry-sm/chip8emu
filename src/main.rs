@@ -26,6 +26,7 @@ fn main() -> std::io::Result<()> {
 
     CHIP8.CPU_reset();
     CHIP8.read_file();
+    
     let cycle = Duration::from_millis(1000/60);
     let mut last_cycle = std::time::Instant::now();
 
@@ -41,26 +42,27 @@ fn main() -> std::io::Result<()> {
         let now = std::time::Instant::now();
         if now.duration_since(last_cycle) >= cycle {
             if let Some(keys) = window.get_keys_pressed(minifb::KeyRepeat::No) {
-            
-}
-
-        
-            CHIP8.clock_cycle();
-            
-            let buffer = CHIP8.get_buffer();
-               CHIP8.keypad = [false; 16];
-            
-            for key in &key_map {
+              
+            CHIP8.keypad = [false; 16];  
+              for key in &key_map {
                 if window.is_key_down(*key.0) {
                    // println!("Key: {:?} pressed {:?}", key.0, key.1);
                     CHIP8.keypad[*key.1 as usize] = true;
-                }
+                  }
+                }          
+            
 
-                 
+           // CHIP8.clock_cycle();
+            //CHIP8.keypad = [false; 16];
+            
 
-            window.update_with_buffer(&buffer, 64, 32).unwrap();
 
             }
+
+            CHIP8.clock_cycle();
+
+            let buffer = CHIP8.get_buffer();
+            window.update_with_buffer(&buffer, 64, 32).unwrap();
          last_cycle = now;
         }
         window.update();

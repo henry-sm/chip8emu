@@ -67,6 +67,8 @@ impl Chip8{
         self.file.read(&mut buffer).unwrap();
         self.memory[0x200..].copy_from_slice(&buffer);
     }
+
+
     pub fn opcode(&mut self){
         //take opcode from memory and read 2 bytes from it
         let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16);
@@ -333,10 +335,12 @@ impl Chip8{ //separate impl for opcodes
 
     pub fn _ex9e(&mut self, x:usize){
         self.pc += if self.keypad[self.register[x] as usize]{2} else {0};
+        println!("Key pressed");
     }
 
     pub fn _exa1(&mut self, x:usize){
         self.pc += if !self.keypad[self.register[x] as usize]{2} else {0};
+        println!("Key pressed");
     }
 
     pub fn _fx07(&mut self, x:usize){
@@ -349,6 +353,7 @@ impl Chip8{ //separate impl for opcodes
                 self.register[x] = i as u8;
             }
         }
+        println!("Key pressed");
     }
 
     pub fn _fx15(&mut self, x:usize){
