@@ -146,9 +146,11 @@ impl Chip8{
                 println!("Invalid opcode {:X}", opcode);
             }
         }
-        if opcode & 0xf000 != 0x1000 && opcode & 0xf000 != 0x2000{
+
+        if opcode & 0xf000 != 0x1000 && opcode & 0xf000 != 0x2000 && opcode != 0x00ee{
             self.pc += 2;
         }
+
     }
 
     pub fn clock_cycle(&mut self){
@@ -283,6 +285,25 @@ impl Chip8{ //separate impl for opcodes
 
     //not confident on this opcode
     pub fn _dxyn(&mut self, x:usize, y:usize, n:u8){ 
+
+        let xcord = self.register[x] as usize % 64;
+        let ycord = self.register[y] as usize % 32;
+        self.register[0xf] = 0;
+
+        for p in 0..n{
+            let px = self.memory[(self.i + p as u16) as usize];
+
+            for q in 0..8{
+                let screen = self.display[ycord + p as usize][xcord + q as usize];
+                if ((px >>q)& 0x1) ==1 && screen ==1 {
+                    self.register[0xf] = 1;
+                }
+                self.display[ycord + p as usize][xcord + q as usize] ^= ((px >> q) & 0x1);
+            }
+        }
+
+        // alternate way 
+        /* 
     let xcord = x as usize % 64;
     let ycord = y as usize % 32;
 
@@ -302,6 +323,7 @@ impl Chip8{ //separate impl for opcodes
             }
         }
     }
+    */
     }
 
 
