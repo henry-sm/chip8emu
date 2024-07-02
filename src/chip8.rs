@@ -298,7 +298,9 @@ impl Chip8{ //separate impl for opcodes
                 if ((px >>q)& 0x1) ==1 && screen ==1 {
                     self.register[0xf] = 1;
                 }
-                self.display[ycord + p as usize][xcord + q as usize] ^= ((px >> q) & 0x1);
+                let _x = (xcord + q as usize) % 64;
+                let _y = (ycord + p as usize) % 32;
+                self.display[_y][_x] ^= ((px >> q) & 0x1);
             }
         }
 
