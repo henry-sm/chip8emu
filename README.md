@@ -1,8 +1,6 @@
-#chip8emu
+# chip8emu
 
-My attempt at learning the basics of emulation by creating a chip8 emulator and I have chosen rust as the language to program in so that i can learn both of them as I go.
-Here's to me to be able to complete this project.
+A chip8 emulator written by me in rust to be able to learn both, rust, and the basics of emulation.
+Currently the emulator passes the famous "IBM LOGO" test but struggles for keypad inputs and lacks any sound output.
 
-Currently it can load up a window, but the input and the display had weird flickers as of now, so those are the current plans for the future.
-
-Relies on `rand` and `minifb` dependencies.
+Dependencies for this project are `rand` and `minifb`. 
