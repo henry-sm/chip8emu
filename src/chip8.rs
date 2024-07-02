@@ -69,7 +69,7 @@ impl Chip8{
     }
     pub fn opcode(&mut self){
         //take opcode from memory and read 2 bytes from it
-        let opcode: u16 = ((self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16));
+        let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16);
         let nnn: u16 = opcode & 0xfff;
         let kk = (opcode & 0xff) as u8;
         let n = (opcode & 0xf) as u8 ;
