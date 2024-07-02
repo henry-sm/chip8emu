@@ -153,7 +153,6 @@ impl Chip8{
 
     pub fn clock_cycle(&mut self){
             self.opcode(); //fetch opcode)
-            self.pc += 2; //increment program counter by 2 bytes
             if self.dt > 0{ 
                 self.dt -= 1;
             }
