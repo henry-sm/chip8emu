@@ -1,6 +1,5 @@
 use std::io::Read;
 use rand::Rng;
-use std::time::Duration;
 
 
 
@@ -81,7 +80,10 @@ impl Chip8{
             0x0000 => match opcode {
                 0x00e0 => self._00e0(),
                 0x00ee => self._00ee(),
-                _ => self.pc += 2, //
+                _ => { 
+                    self.pc += 2;
+                    println!("Invalid opcode {:X}", opcode);
+                }
             }
 
             0x1000 => self._1nnn(nnn),
@@ -102,7 +104,10 @@ impl Chip8{
                 0x0006 => self._8xy6(x, y),
                 0x0007 => self._8xy7(x, y),
                 0x000e => self._8xye(x, y),
-                _ => self.pc += 2, //test
+                _ =>{
+                    self.pc += 2;
+                    println!("Invalid opcode {:X}", opcode);
+                }
             }
 
             0x9000 => self._9xy0(x, y),
@@ -114,7 +119,10 @@ impl Chip8{
             0xe000 => match kk{
                 0x009e => self._ex9e(x),
                 0x00a1 => self._exa1(x),
-                _ => println!("Invalid opcode {:X}", opcode),
+                _ =>{
+                    self.pc += 2;
+                    println!("Invalid opcode {:X}", opcode);
+                }
             }
 
             0xf000 => match kk{
@@ -127,10 +135,19 @@ impl Chip8{
                 0x0033 => self._fx33(x),
                 0x0055 => self._fx55(x),
                 0x0065 => self._fx65(x),
-                _ => println!("Invalid opcode {:X}", opcode),
+                _ =>{
+                    self.pc += 2;
+                    println!("Invalid opcode {:X}", opcode);
+                }
             }
             
-            _ => println!("Invalid opcode {:X}", opcode),
+            _ =>{
+                self.pc += 2;
+                println!("Invalid opcode {:X}", opcode);
+            }
+        }
+        if opcode & 0xf000 != 0x1000 && opcode & 0xf000 != 0x2000{
+            self.pc += 2;
         }
     }
 
@@ -286,7 +303,6 @@ impl Chip8{ //separate impl for opcodes
             }
         }
     }
-        //none of ways i coded this works so currently copied straight off off gpt
     }
 
 
